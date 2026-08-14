@@ -720,6 +720,7 @@ internal static class ObservationCodeGenerator
     /// for inner segments, so reusing the root's plugin is safe whatever the segment declares.
     /// </param>
     /// <param name="isBeforeChange">Whether before-change notifications are being observed.</param>
+    /// <remarks>Missing parents suppress values to match the runtime expression-chain fallback.</remarks>
     private static void EmitObservationChainInnerSegments(
         StringBuilder sb,
         EquatableArray<PropertyPathSegment> path,
@@ -737,7 +738,14 @@ internal static class ObservationCodeGenerator
 
             if (rootPlugin is not null)
             {
-                rootPlugin.EmitDeepChainInnerSegment(sb, prevVar, curVar, lambdaParam, seg, isBeforeChange);
+                rootPlugin.EmitDeepChainInnerSegment(
+                    sb,
+                    prevVar,
+                    curVar,
+                    lambdaParam,
+                    seg,
+                    isBeforeChange,
+                    NullParentObservationBehavior.SuppressEmission);
             }
             else if (IsINPChanging(classInfo) && isBeforeChange)
             {
@@ -750,7 +758,7 @@ internal static class ObservationCodeGenerator
                                                          (global::System.ComponentModel.INotifyPropertyChanging){lambdaParam},
                                                          "{seg.PropertyName}",
                                                          (global::System.ComponentModel.INotifyPropertyChanging __o) => (({seg.DeclaringTypeFullName})__o).{seg.PropertyName})
-                                                     : (global::System.IObservable<{segType}>)new global::ReactiveUI.Binding.Observables.ReturnObservable<{segType}>(default({segType}))));
+                                                     : (global::System.IObservable<{segType}>)global::ReactiveUI.Binding.Observables.EmptyObservable<{segType}>.Instance));
                                  """);
             }
             else
@@ -759,8 +767,10 @@ internal static class ObservationCodeGenerator
                     .AppendLine($"""
                                          var {curVar} = global::ReactiveUI.Binding.Observables.RxBindingExtensions.Switch(
                                              global::ReactiveUI.Binding.Observables.RxBindingExtensions.Select({prevVar},
-                                                 {lambdaParam} => (global::System.IObservable<{segType}>)new global::ReactiveUI.Binding.Observables.ReturnObservable<{segType}>(
-                                                     {lambdaParam} != null ? (({seg.DeclaringTypeFullName}){lambdaParam}).{seg.PropertyName} : default({segType}))));
+                                                 {lambdaParam} => {lambdaParam} != null
+                                                     ? (global::System.IObservable<{segType}>)
+                                                         new global::ReactiveUI.Binding.Observables.ReturnObservable<{segType}>((({seg.DeclaringTypeFullName}){lambdaParam}).{seg.PropertyName})
+                                                     : (global::System.IObservable<{segType}>)global::ReactiveUI.Binding.Observables.EmptyObservable<{segType}>.Instance));
                                  """);
             }
         }
@@ -779,6 +789,7 @@ internal static class ObservationCodeGenerator
     /// </param>
     /// <param name="isBeforeChange">Whether before-change notifications are being observed.</param>
     /// <param name="varName">The variable-name prefix for the emitted stages.</param>
+    /// <remarks>Missing parents suppress values to match the runtime expression-chain fallback.</remarks>
     private static void EmitDeepChainInnerSegments(
         StringBuilder sb,
         EquatableArray<PropertyPathSegment> path,
@@ -797,7 +808,14 @@ internal static class ObservationCodeGenerator
 
             if (rootPlugin is not null)
             {
-                rootPlugin.EmitDeepChainInnerSegment(sb, prevObsVar, curObsVar, lambdaParam, seg, isBeforeChange);
+                rootPlugin.EmitDeepChainInnerSegment(
+                    sb,
+                    prevObsVar,
+                    curObsVar,
+                    lambdaParam,
+                    seg,
+                    isBeforeChange,
+                    NullParentObservationBehavior.SuppressEmission);
             }
             else if (IsINPChanging(classInfo) && isBeforeChange)
             {
@@ -810,7 +828,7 @@ internal static class ObservationCodeGenerator
                                                          (global::System.ComponentModel.INotifyPropertyChanging){lambdaParam},
                                                          "{seg.PropertyName}",
                                                          (global::System.ComponentModel.INotifyPropertyChanging __o) => (({seg.DeclaringTypeFullName})__o).{seg.PropertyName})
-                                                     : (global::System.IObservable<{segType}>)new global::ReactiveUI.Binding.Observables.ReturnObservable<{segType}>(default({segType}))));
+                                                     : (global::System.IObservable<{segType}>)global::ReactiveUI.Binding.Observables.EmptyObservable<{segType}>.Instance));
                                  """);
             }
             else
@@ -819,8 +837,10 @@ internal static class ObservationCodeGenerator
                     .AppendLine($"""
                   var {curObsVar} = global::ReactiveUI.Binding.Observables.RxBindingExtensions.Switch(
                       global::ReactiveUI.Binding.Observables.RxBindingExtensions.Select({prevObsVar},
-                          {lambdaParam} => (global::System.IObservable<{segType}>)new global::ReactiveUI.Binding.Observables.ReturnObservable<{segType}>(
-                              {lambdaParam} != null ? (({seg.DeclaringTypeFullName}){lambdaParam}).{seg.PropertyName} : default({segType}))));
+                          {lambdaParam} => {lambdaParam} != null
+                              ? (global::System.IObservable<{segType}>)
+                                  new global::ReactiveUI.Binding.Observables.ReturnObservable<{segType}>((({seg.DeclaringTypeFullName}){lambdaParam}).{seg.PropertyName})
+                              : (global::System.IObservable<{segType}>)global::ReactiveUI.Binding.Observables.EmptyObservable<{segType}>.Instance));
           """);
             }
         }
@@ -836,6 +856,7 @@ internal static class ObservationCodeGenerator
     /// <param name="classInfo">The root type's binding info, when known.</param>
     /// <param name="plugin">The observation plugin for the root type, when one matched.</param>
     /// <param name="variableName">The name of the variable the chain result is assigned to.</param>
+    /// <remarks>Missing parents emit defaults here so binding consumers can clear their targets.</remarks>
     private static void EmitInlineDeepChain(
         StringBuilder sb,
         string rootVar,
@@ -866,7 +887,14 @@ internal static class ObservationCodeGenerator
 
             if (plugin is not null)
             {
-                plugin.EmitDeepChainInnerSegment(sb, prevVar, curVar, lambdaParam, seg, false);
+                plugin.EmitDeepChainInnerSegment(
+                    sb,
+                    prevVar,
+                    curVar,
+                    lambdaParam,
+                    seg,
+                    isBeforeChange: false,
+                    nullParentBehavior: NullParentObservationBehavior.EmitDefault);
                 continue;
             }
 
@@ -876,8 +904,10 @@ internal static class ObservationCodeGenerator
                 .AppendLine($"""
                                  var {curVar} = global::ReactiveUI.Binding.Observables.RxBindingExtensions.Switch(
                                      global::ReactiveUI.Binding.Observables.RxBindingExtensions.Select({prevVar},
-                                         {lambdaParam} => (global::System.IObservable<{segType}>)new global::ReactiveUI.Binding.Observables.ReturnObservable<{segType}>(
-                                             {lambdaParam} != null ? (({declType}){lambdaParam}).{seg.PropertyName} : default({segType}))));
+                                         {lambdaParam} => {lambdaParam} != null
+                                             ? (global::System.IObservable<{segType}>)
+                                                 new global::ReactiveUI.Binding.Observables.ReturnObservable<{segType}>((({declType}){lambdaParam}).{seg.PropertyName})
+                                             : (global::System.IObservable<{segType}>)new global::ReactiveUI.Binding.Observables.ReturnObservable<{segType}>(default({segType}))));
                              """);
         }
 
