@@ -38,6 +38,9 @@ public class WhenAnyValueEdgeCaseTests
     /// <summary>The initial child name used in nullable deep-chain tests.</summary>
     private const string Alice = "Alice";
 
+    /// <summary>The replacement child name used in nullable deep-chain tests.</summary>
+    private const string Charlie = "Charlie";
+
     /// <summary>Verifies that disposing the WhenAnyValue subscription stops listening for changes.</summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Test]
@@ -165,13 +168,49 @@ public class WhenAnyValueEdgeCaseTests
         generatedHost.Child = null;
         fallbackHost.Child = null;
 
-        generatedHost.Child = new() { Name = "Charlie" };
-        fallbackHost.Child = new() { Name = "Charlie" };
+        generatedHost.Child = new() { Name = Charlie };
+        fallbackHost.Child = new() { Name = Charlie };
 
         var generatedTrace = string.Join('|', generatedValues);
         var fallbackTrace = string.Join('|', fallbackValues);
         await Assert.That(generatedTrace).IsEqualTo(fallbackTrace);
         await Assert.That(generatedTrace).IsEqualTo("Alice|Bob|Charlie");
+    }
+
+    /// <summary>
+    /// Verifies that breaking a three-link chain detaches the generated and legacy observers from
+    /// the orphaned subtree, while repairing the chain reattaches both implementations.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Test]
+    public async Task DeepChain_ThreeLinks_DetachesOrphanedSubtreeLikeLegacyReactiveUI()
+    {
+        var generatedMiddle = new TestViewModel { Child = new() { Name = Alice } };
+        var fallbackMiddle = new TestViewModel { Child = new() { Name = Alice } };
+        var generatedHost = new HostTestFixture { Child = generatedMiddle };
+        var fallbackHost = new HostTestFixture { Child = fallbackMiddle };
+        var generatedValues = new List<string>();
+        var fallbackValues = new List<string>();
+
+        using var generatedSub = WhenAnyValueScenarios.DeepChain_GrandchildName(generatedHost)
+            .Subscribe(generatedValues.Add);
+        using var fallbackSub = RuntimeObservationFallback
+            .WhenAnyValue(fallbackHost, x => x.Child!.Child!.Name)
+            .Subscribe(fallbackValues.Add);
+
+        generatedHost.Child = null;
+        fallbackHost.Child = null;
+
+        generatedMiddle.Child!.Name = "Orphan mutation";
+        fallbackMiddle.Child!.Name = "Orphan mutation";
+
+        generatedHost.Child = new() { Child = new() { Name = Charlie } };
+        fallbackHost.Child = new() { Child = new() { Name = Charlie } };
+
+        var generatedTrace = string.Join('|', generatedValues);
+        var fallbackTrace = string.Join('|', fallbackValues);
+        await Assert.That(generatedTrace).IsEqualTo(fallbackTrace);
+        await Assert.That(generatedTrace).IsEqualTo("Alice|Charlie");
     }
 
     /// <summary>Verifies that a null leaf is still emitted when every intermediate object exists.</summary>

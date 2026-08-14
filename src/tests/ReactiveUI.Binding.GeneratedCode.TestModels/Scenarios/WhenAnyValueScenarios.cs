@@ -53,6 +53,12 @@ public static class WhenAnyValueScenarios
     public static IObservable<string> DeepChain_ChildName(HostTestFixture host) =>
         host.WhenAnyValue(x => x.Child!.Name);
 
+    /// <summary>Three-link property chain observation on HostTestFixture.Child!.Child!.Name.</summary>
+    /// <param name="host">The host fixture to observe.</param>
+    /// <returns>An observable of the nested grandchild Name property value.</returns>
+    public static IObservable<string> DeepChain_GrandchildName(HostTestFixture host) =>
+        host.WhenAnyValue(x => x.Child!.Child!.Name);
+
     /// <summary>Deep property chain observation on HostTestFixture.Child!.Age.</summary>
     /// <param name="host">The host fixture to observe.</param>
     /// <returns>An observable of the nested Age property value.</returns>

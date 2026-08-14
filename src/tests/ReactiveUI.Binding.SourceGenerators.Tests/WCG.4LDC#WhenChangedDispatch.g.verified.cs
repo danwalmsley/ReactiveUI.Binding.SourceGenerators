@@ -50,7 +50,7 @@ namespace ReactiveUI.Binding.Generated.TestAssembly
                         "Model",
                         (global::System.ComponentModel.INotifyPropertyChanged __o) => ((global::SharedScenarios.WhenChanged.FourLevelDeepChain.Level2)__o).Model,
                         false)
-                    : (global::System.IObservable<global::SharedScenarios.WhenChanged.FourLevelDeepChain.Level3>)global::ReactiveUI.Binding.Observables.EmptyObservable<global::SharedScenarios.WhenChanged.FourLevelDeepChain.Level3>.Instance));
+                    : (global::System.IObservable<global::SharedScenarios.WhenChanged.FourLevelDeepChain.Level3>)new global::ReactiveUI.Binding.Observables.ReturnObservable<global::SharedScenarios.WhenChanged.FourLevelDeepChain.Level3>(default(global::SharedScenarios.WhenChanged.FourLevelDeepChain.Level3))));
 
         var __obs2 = global::ReactiveUI.Binding.Observables.RxBindingExtensions.Switch(
             global::ReactiveUI.Binding.Observables.RxBindingExtensions.Select(__obs1,
@@ -60,7 +60,7 @@ namespace ReactiveUI.Binding.Generated.TestAssembly
                         "Model",
                         (global::System.ComponentModel.INotifyPropertyChanged __o) => ((global::SharedScenarios.WhenChanged.FourLevelDeepChain.Level3)__o).Model,
                         false)
-                    : (global::System.IObservable<global::SharedScenarios.WhenChanged.FourLevelDeepChain.Model>)global::ReactiveUI.Binding.Observables.EmptyObservable<global::SharedScenarios.WhenChanged.FourLevelDeepChain.Model>.Instance));
+                    : (global::System.IObservable<global::SharedScenarios.WhenChanged.FourLevelDeepChain.Model>)new global::ReactiveUI.Binding.Observables.ReturnObservable<global::SharedScenarios.WhenChanged.FourLevelDeepChain.Model>(default(global::SharedScenarios.WhenChanged.FourLevelDeepChain.Model))));
 
         var __obs3 = global::ReactiveUI.Binding.Observables.RxBindingExtensions.Switch(
             global::ReactiveUI.Binding.Observables.RxBindingExtensions.Select(__obs2,
